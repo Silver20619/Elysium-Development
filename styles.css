@@ -71,6 +71,12 @@ article small {
     color: #777;
 }
 
+img {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px 0;
+}
+
 /* Link and Button Styling */
 a {
     text-decoration: none;

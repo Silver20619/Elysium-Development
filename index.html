@@ -23,6 +23,7 @@
                 <h3>Inventory Server: The handling of player items and statistics.</h3>
                 <p>Primarily handles player(s) items by grabbing items out of replicatedStorage using the following dependencie(s): "InventoryServer" , then sends player information back to the player. </p>
                 <small>ServerScriptService primarily handles this function.</small>
+                <p>View the script: <a href="https://github.com/Silver20619/Elysium-Development/raw/main/Scripts/src/Server/InventoryServer.lua" target="_blank">InventoryServerScript.lua</a></p
             </article>
             <article>
                 <h3>ProximityPromptScript: The debugging of players on gathering item information.</h3>
@@ -35,8 +36,8 @@
                 <small>ServerScriptService primarily handles this function.</small>
             </article>
              <article>
-                <h3>LootRandomizer: Creates a random number through a table (1-10), intializes the local counter at 0 to ensure no overflow of data; takes the rarity for any given item and applies an local weight to said item, the higher the weight, the less likely the player will pull that item. Each chest has its own lootTable which is a table that holds all the possible items a player can get out of a particular chest. The Loot Randomizer will select a number between 1-3 which dictates the amount of items you can recieve in a given chest.</h3>
-                <p>Checks if the player has activated a proximity prompt (Billboard GUI of item) while also confirming item ID. </p>
+                <h3>LootRandomizer: Randomizes loot for the player </h3>
+                <p>Creates a random number through a table (1-10), intializes the local counter at 0 to ensure no overflow of data; takes the rarity for any given item and applies an local weight to said item, the higher the weight, the less likely the player will pull that item. Each chest has its own lootTable which is a table that holds all the possible items a player can get out of a particular chest. The Loot Randomizer will select a number between 1-3 which dictates the amount of items you can recieve in a given chest. </p>
                 <small>ServerScriptService primarily handles this function.</small>
             </article>
             <article>

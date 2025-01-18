@@ -22,7 +22,6 @@
             <article>
                 <h3>Inventory Server: The handling of player items and statistics.</h3>
                 <p>Primarily handles player(s) items by grabbing items out of replicatedStorage using the following dependencie(s): "InventoryServer" , then sends player information back to the player. </p>
-                <small>ServerScriptService primarily handles this function.</small>
                 <p>Click the link below to view the inventory system design chart:</p>
                 <a href="https://raw.githubusercontent.com/Silver20619/Elysium-Development/main/Docs/Elysium_ The Forsaken Dungeons_ inventorySystem.pdf" target ="_blank">
                     View Inventory System Design Chart (PDF)
@@ -33,39 +32,33 @@
             <article>
                 <h3>ProximityPromptScript: The debugging of players on gathering item information.</h3>
                 <p>Checks if the player has activated a proximity prompt (Billboard GUI of item) while also confirming item ID. </p>
-                <small>ServerScriptService primarily handles this function.</small>
                 <p>View the script: <a href="https://github.com/Silver20619/Elysium-Development/raw/main/Scripts/src/Server/ProximityPromptScript/Script.server.lua" target="_blank">PromximityPromptScript.lua</a></p
                                                                                                                                                                                                               
             </article>
             <article>
                 <h3>Security System: A inventory security system.</h3>
                 <p>Effectively iterates through player inventory and chests that contain items so make sure an exisiting tag is present, and if not, the system outputs "Invalid tag". Also sets in place settings that puts a maximum value on data inside of a given stack at a time; provides the IDs for the following objects: Armor, Weapon, Consumable, Cards, and Moves. Creates a stack and intializes it at -1 to ensure there is no overflow of data when checkOverFlow function is ran. Handles the creation of stacks for the inventory system alongside the math needed for processing item information. </p>
-                <small>ServerScriptService primarily handles this function.</small>
                 <p>View the script: <a href="https://github.com/Silver20619/Elysium-Development/raw/main/Scripts/src/Server/SecurityCheck.server.lua" target="_blank">SecurityCheck.server.lua</a></p
             </article>
              <article>
                 <h3>LootRandomizer: Randomizes loot for the player </h3>
                 <p>Creates a random number through a table (1-10), intializes the local counter at 0 to ensure no overflow of data; takes the rarity for any given item and applies an local weight to said item, the higher the weight, the less likely the player will pull that item. Each chest has its own lootTable which is a table that holds all the possible items a player can get out of a particular chest. The Loot Randomizer will select a number between 1-3 which dictates the amount of items you can recieve in a given chest. </p>
-                <small>ServerScriptService primarily handles this function.</small>
                 <p>View the script: <a href="https://github.com/Silver20619/Elysium-Development/raw/main/Scripts/src/Server/LootRandomizer.lua" target="_blank">LootRandomizer.lua</a></p
                 <img src="scripts/RobloxScreenShot20250115_164452254.png" alt="Player interacts with chest and is granted the random item "Antidote">                                                                                                                                                                              
             </article>
             <article>
                 <h3>customProximityPrompts: Graphical interface for items</h3>
                 <p>Primarily works on front-end graphical interface settings. Sets rarity colors along with grabbing the screenGUI out of the playerGUI (When player spawns in world, storage is created for GUIs). The proximity prompt is loaded in segments such as the frame, bottom frame, middle frame, and top frame; all of which the script iterates through the world explorer to find. Then, UI elements are added by iterating through the orld explorer to find elements such as: rarityType, descriptionType, itemClass, item, and itemQuantity. Various other elements are added in as well such as tweening(animations) alongside distance optimization and clean up functions after the player has disengaged with said item. </p>
-                <small>StarterPlayerScripts primarily handles these functionalities.</small>
                 <p>View the script: <a href="https://github.com/Silver20619/Elysium-Development/raw/main/Scripts/src/Server/customProximityPrompts.lua" target="_blank">customProximityPrompts.lua</a></p
                 <img src="scripts/red apple.jpg" alt="Player looking at a red apple in the game world is promnpted a GUI (graphical user interface) designed completely in Roblox Studio">                                                                                                                                                                                              
             </article>
             <article>
                 <h3>Animations</h3>
                 <p>Using plugins such as Moon Animator 2 alognside the default Roblox Animation Editor, various animations have been added into the game such as opening a chest, and various others. </p>
-                <small>Moon Animator 2 and Roblox Animation Editor primarily handles these functions.</small>
             </article>
             <article
                 <h3>localHighlighter</h3>
                 <p>A script that handles the highlighting of objects only if interactable and the players line-of-sight matches the object in the workspace.</p>
-                <small>StarterPlayerScripts primarily handles these functionalities.</small>
             </article>
         </section>
 

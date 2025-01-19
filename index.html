@@ -60,6 +60,24 @@
                 <h3>localHighlighter</h3>
                 <p>A script that handles the highlighting of objects only if interactable and the players line-of-sight matches the object in the workspace.</p>
             </article>
+             <article>
+                <h3>dungeonGeneration</h3>
+                <p>Updates:
+                1/18/2025 - Research was conducted on Delaunay Triangulation and Bower-Watson algorithms to help in assistance with the procedurally generated dungeons. It has come to our attention that Delaunay Triangulation would be the best choice for our state of action because of its ability to delete unnecessary plot points in our grid mapping (super traingle) </p>
+                <img src="https://raw.githubusercontent.com/Silver20619/Elysium-Development/main/docs/superTriangle.png" 
+                 alt="Super Triangle in Delaunay Triangulation" 
+                 style="max-width: 100%; height: auto;">
+                 <p> As shown in the picture above, the super triangle serves as a boundary encompassing all points on the plane. Within this boundary, a **circumcircle** is drawn for each triangle, ensuring that no points lie inside the circumcircle other than the vertices of the triangle itself. This property is critical for Delaunay Triangulation, as it maintains the most equiangular triangle configurations, reducing thin or elongated triangles. By iteratively applying this rule, the algorithm ensures a balanced and efficient triangulation of the points.</p>
+                <img src="https://raw.githubusercontent.com/Silver20619/Elysium-Development/main/docs/Triangulation.png" 
+                 alt="Delaunay Triangulation ran in-game simulating rooms and pathways to rooms" 
+                 style="max-width: 100%; height: auto;">
+                 <p> This image illustrates Delaunay Triangulation applied to a procedurally generated dungeon, where the blocks represent rooms and the lines denote potential hallways. The triangulation ensures no room lies inside the circumcircle of any triangle, creating an efficient, non-overlapping network of connections that can be optimized for gameplay.</p>    
+                <img src="https://raw.githubusercontent.com/Silver20619/Elysium-Development/main/docs/TriangulationRevision.png" 
+                 alt="Revised Delaunay Triangulation for future reference" 
+                 style="max-width: 100%; height: auto;">
+                 <p>As shown in the image above are the revisions needed for the Delaunay Triangulation System. As of now, we are dealing with clustering isssues, rooms that are too sparced from the rest, and inefficiency when it comes to some of the hallways. Redundant or overly long hallways reduce efficiency and create convoluted paths. We can simplify these connections by removing unnecessary edges, possibly using algorithms like Minimum Spanning Tree (MST) to create a more streamlined layout.</p>
+            </article>
+            </article>
            
         </section>
 

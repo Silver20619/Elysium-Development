@@ -1,1 +1,247 @@
+local Pathfinding2 = {}
 
+--- Moduels
+local PFNodes = require(script.Parent.PathFinding:WaitForChild("PFNodes"))
+local PathPQ = require(script:WaitForChild("PathPQ"))
+local GlobalTable = require(script:WaitForChild("GlobalTable"))
+
+
+---- Script Variables
+
+local clonedBlocks = {}
+local exisingHallway = {}
+local num = 0
+local pathTable = GlobalTable.new()
+local startingPos = nil
+local endingPos = nil
+local lockDown = false
+local goalReached = false
+local lastNode 
+local numSet = {[2] = true,[4] = true ,[6] = true ,[8] = true ,[10] = true , [12] = true , [14] = true , [16] = true, [18] = true, 
+}
+
+local directions = {
+	Vector3.new(36, 0, 0),  -- Right
+	Vector3.new(-36, 0, 0), -- Left
+	Vector3.new(0, 0, 36),  -- Forward
+	Vector3.new(0, 0, -36)  -- Backward
+}
+
+--- Script Functions
+
+local function GetHeuristic(posA,posB)
+	return math.abs(posA.X - posB.X) + math.abs(posA.Z - posB.Z)
+end
+
+function Pathfinding2:returnTable()
+	
+	return pathTable:GetWholeBlockTable()
+end
+
+function Pathfinding2:returnGraph()
+	return pathTable:GetGraph()
+end
+
+function Pathfinding2:createGraph()
+	pathTable:CreateGraph()
+end
+
+local function spawnHallways(pos,hitBoxes,dir)
+
+	local newPos
+	local overlapParams = OverlapParams.new()
+	overlapParams.FilterType = Enum.RaycastFilterType.Include
+	overlapParams.FilterDescendantsInstances = {clonedBlocks,hitBoxes ,pathTable:GetTable()}
+	local size = Vector3.new(35.5, 35.5, 35.5)
+
+	if startingPos == pos then
+		newPos = pos - (-dir/4)
+		size = Vector3.new(6.5,pos.Y,6.5)
+	
+	elseif endingPos == pos then
+		newPos = pos - (dir/4)
+		size = Vector3.new(6.5,pos.Y,6.5)
+	end
+
+	
+	local partsInBox = workspace:GetPartBoundsInBox(
+		CFrame.new(newPos or pos), size, overlapParams)
+
+	if #partsInBox > 0 then
+		
+		for _, part in pairs(partsInBox) do
+			
+			local existingBlock = pathTable:findNode(part)
+			
+			if existingBlock then --- If the block is from a existing path
+				lockDown =false
+				return existingBlock.Parent.Name
+				
+			elseif table.find(clonedBlocks,part) then --- If block is from current path
+				lockDown = false
+				return part.Parent.Name
+			
+			elseif table.find(hitBoxes,part) then --- If block is in a dungeon room
+				lockDown = false
+				return nil
+			end
+		end
+		
+	elseif startingPos == pos then
+		local block = game.Workspace:WaitForChild("8x8"):Clone()
+		block.Name = "startRoom" .. tostring(num)
+		block.Parent = game.Workspace 
+		local midpoint = pos - (-dir/4)
+		local height = block:WaitForChild("HitBox").Size.Y / 2
+		midpoint = Vector3.new(midpoint.X,midpoint.Y + height,midpoint.Z)
+		block:SetPrimaryPartCFrame(CFrame.new(midpoint))
+		lockDown =false
+		table.insert(clonedBlocks,block.HitBox)
+		return block.Name
+		
+	elseif pos == endingPos then
+		local block = game.Workspace:WaitForChild("8x8"):Clone()
+		block.Name = "goalRoom" .. tostring(num)
+		block.Parent = game.Workspace 
+		local midpoint = pos - (dir/4)
+		local height = block:WaitForChild("HitBox").Size.Y / 2
+		midpoint = Vector3.new(midpoint.X,midpoint.Y + height,midpoint.Z)
+		block:SetPrimaryPartCFrame(CFrame.new(midpoint))
+		lockDown =false
+		table.insert(clonedBlocks,block.HitBox)
+		return block.Name
+	
+	else 
+		num = num + 1
+		local block = game.Workspace:WaitForChild("testingRoom"):Clone()
+		block.Parent = game.Workspace
+		local height = block:WaitForChild("HitBox").Size.Y /2
+		pos = Vector3.new(pos.X, pos.Y +8 ,pos.Z)
+		block.Name = "Block" .. tostring(num) 
+		block:SetPrimaryPartCFrame(CFrame.new(pos))
+		table.insert(clonedBlocks,block.HitBox)
+		lockDown = false
+		return block.Name
+
+	end
+end
+
+local function findTheAverage(posTable)
+	for i, pos in pairs(posTable) do
+		local sumX, sumY, sumZ = 0,0,0
+		local count = #posTable
+
+		for _, pos in pairs(posTable) do
+			sumX = sumX + pos.Position.X
+			sumY = sumY + pos.Position.Y
+			sumZ = sumZ + pos.Position.Z
+		end
+
+		return Vector3.new(sumX / count, sumY / count, sumZ / count)
+		
+	end
+end
+
+function Pathfinding2:createPath(startPos,goalPos,hitBoxes)
+	
+	local openSet = {}
+	local closedSet = {}
+	
+	startingPos = startPos
+	endingPos = goalPos
+	
+	local ball = Instance.new("Part")
+	ball.Name = "Idiot"
+	ball.Shape = Enum.PartType.Ball -- Make it a sphere
+	ball.Size = Vector3.new(10, 10, 10) -- Set size (5x5x5 studs)
+	ball.Position = endingPos -- Set position in the world
+	ball.Material = Enum.Material.SmoothPlastic -- Set a material
+	ball.Color = Color3.fromRGB(255, 0, 0) -- Set color (Red)
+	ball.Anchored = true -- Let it fall with gravity
+	ball.Parent = game.Workspace
+	
+	local startNode = PFNodes.new(startPos,0,GetHeuristic(startPos,goalPos))
+	
+	local openQ = PathPQ.new()
+	openQ:insert(startNode)
+	openSet[startPos] = startNode
+	
+	while true do
+		
+		if openQ.heap[1] == nil then 
+			print("No path found")
+			return nil 
+		end
+	
+		local currentNode = openQ:pop()
+		closedSet[currentNode.Position] = true
+		
+		if currentNode.Position == goalPos then
+			local path = {}
+			local lastNode = currentNode
+			while currentNode do
+				
+				table.insert(path,1,currentNode)
+				
+				if currentNode.Block then
+					local clonedBlock = game.Workspace:FindFirstChild(currentNode.Block).HitBox
+					local dup = pathTable:findNode(clonedBlock)
+					
+					local index = table.find(clonedBlocks,clonedBlock)
+					
+					if index then
+						table.remove(clonedBlocks,index)
+					end
+				end
+				currentNode = currentNode.Parent
+			end
+			 
+			for _, block in pairs(clonedBlocks) do
+				block.Parent:Destroy()
+			end
+			clonedBlocks = {}
+			
+			for x , block in ipairs(path) do
+				local cube = game.Workspace:FindFirstChild(block.Block).HitBox
+				pathTable:insertBlock(cube)
+			end
+			
+			return path
+		end
+		
+		for _, dir in pairs(directions) do
+			
+			local neighborPos = currentNode.Position + dir
+			if closedSet[neighborPos] then continue end -- Skip if already processed
+
+			local gCost = currentNode.gCost + 36
+			local hCost = GetHeuristic(neighborPos, goalPos)
+
+			local existingNode = openSet[neighborPos]
+			if existingNode and existingNode:GetFcost() <= (gCost + hCost) then
+				continue
+			end
+
+			-- Spawn the hallway if needed
+			 
+			local block = spawnHallways(neighborPos, hitBoxes, dir)
+			
+			--repeat wait()  until not lockDown
+			lockDown = true
+			
+			if not block then continue end
+			if startNode.Block == nil then
+				local startingBlock = spawnHallways(startingPos,hitBoxes,dir)
+				startNode.Block = startingBlock
+			end
+			-- Create new neighbor node
+			local neighborNode = PFNodes.new(neighborPos, gCost, hCost, currentNode, block)
+			openSet[neighborPos] = neighborNode
+			openQ:insert(neighborNode) -- Add to priority queue
+		end
+	end
+end	
+
+
+
+return Pathfinding2

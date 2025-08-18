@@ -1,12 +1,14 @@
-
 local boundingBox = game.Workspace:WaitForChild("plat")
 local baseplate = game.Workspace:WaitForChild("Baseplate")
 local PQ = require(script:WaitForChild("PQ"))
 
 local PathFinding = require(script:WaitForChild("Pathfinding2"))
+local GlobalTable = require(script.Pathfinding2:WaitForChild("GlobalTable"))
+local ConvertHallWays = require(script:WaitForChild("NewConvertHallways"))
 local size = boundingBox.Size
 local cframe = boundingBox.CFrame
 local dungeonRoom = game.Workspace:WaitForChild("DungeonRoom")
+local randomRoom 
 
 -- Calculate XZ bounds
 local minX = cframe.Position.X - size.X / 2
@@ -17,13 +19,13 @@ local maxZ = cframe.Position.Z + size.Z / 2
 local existingLines = {}
 
 local function getRandomPositionXZ()
-	local remainderX = math.abs(16 - minX % 16) 
-	local remainderZ = math.abs(16 - minZ % 16)
+	local remainderX = math.abs(36 - minX % 36) 
+	local remainderZ = math.abs(36 - minZ % 36)
 	
-	local randomX = (remainderX + minX) + (16 * math.random(1,19))
-	local randomZ = (remainderZ + minZ) + (16 * math.random(1,19))
+	local randomX = (remainderX + minX) + (36 * math.random(1,30))
+	local randomZ = (remainderZ + minZ) + (36 * math.random(1,30))
 
-	return Vector3.new(randomX, boundingBox.Position.Y +16, randomZ)
+	return Vector3.new(randomX, boundingBox.Position.Y +36, randomZ)
 end
 
 local function createGraph(list)
@@ -95,7 +97,7 @@ local function createLinesBetweenPoints(validEdges,points)
 				local pointA = tri[i]
 				local pointB = tri[k]
 				local distance = (pointA.Position - pointB.Position).Magnitude
-				
+
 				--[[local line = Instance.new("Part")
 				line.Name = "Line" .. pointA.Name .. "-" .. pointB.Name
 				line.Size = Vector3.new(0.2, 0.2, distance) -- Length of the line
@@ -183,6 +185,27 @@ end
 
 
 
+local function pushAway(room,roomTable)
+	local partsInside = workspace:GetPartsInPart(room)
+	for i, part in partsInside do
+		if part ~= room then
+			local direction = (room.Position - part.Position).Unit
+			direction = Vector3.new(direction.X , 0 , direction.Z)
+			room.Position = room.Position + direction * -10 
+			
+			if workspace:FindPartOnRay(Ray.new(room.Position, direction * -10)) then
+				--direction = rotateDirection90DegreesX(rotateDirection90DegreesZ(direction)) 
+				
+				return false
+			end
+			wait(0.5)
+			
+		end
+		
+	end
+	return true
+end
+
 local function separate(blockTable)
 	local notSeparated = true
 
@@ -259,7 +282,7 @@ local function delaunayTriangulation(points)
 	local triangles = {}
 	table.insert(triangles,super)
 
-	
+	-- Mocking some Delaunay connections for simplicity
 	for i = 1, #points - 2 do
 		for j = i + 1, #points - 1 do
 			for k = j + 1, #points do
@@ -349,7 +372,8 @@ local function PrimsAlgorithm(graph, startNode)
 		local from = root.startnode
 		local to = root.endnode
 		local distance = root.distance 
-		
+
+
 
 		-- Check if the destination node has already been visited
 		if not visited[to]then
@@ -409,16 +433,30 @@ local function createLines(mst)
 		line.Color = Color3.fromRGB(0, 255, 0)
 		line.Parent = workspace
 		line.CFrame = CFrame.new(line.Position, line.Position + direction)
-		
 	end
 	
 end   
 
+local function destoryWall(curHall, neighborHall)
+	local number = string.match(curHall.Name,"%d+")
+	
+	local door = curHall:FindFirstChild("SolidDoor" .. number)
+	
+	local doorway = curHall:FindFirstChild("DoorWay" .. number)
+	
+	
+	doorway.Transparency = 0
+	
+	
+	door:Destroy()
+	neighborHall:Destroy()
+
+end
 
 -- Main function to generate and triangulate blocks
 local function main()
 	local hitBoxes = {}
-	local numBlocks = 10
+	local numBlocks = 15
 	local blocks = generateRandomBlocks(numBlocks)
 	
 	print(blocks)
@@ -452,17 +490,76 @@ local function main()
 	
 	
 	for _, path in pairs(MST) do
+	
 		local start = getPart(path.From).Position
 		local goal = getPart(path.To).Position
 		
 		local path =PathFinding:createPath(start,goal,hitBoxes) 
 		
 		repeat task.wait() until path
-		
 	end
 	
 	
+	print("done")
+	PathFinding:createGraph()
+	local pfGraph = PathFinding:returnGraph()
+	ConvertHallWays:changeHallways(pfGraph)
+	
+	
+	--[[for c, hallNode in ipairs(hallwayTable) do
+		
+		local num = 1
+		
+		local overlapParams = OverlapParams.new()
+		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+		overlapParams.FilterDescendantsInstances = {hallNode, workspace.plat}
+		
+		while hallNode:FindFirstChild("DoorNode" .. tostring(num)) do
+			
+			local doorNode = hallNode:FindFirstChild("DoorNode" .. tostring(num))
+			local partInBox = workspace:GetPartBoundsInBox(doorNode.CFrame,doorNode.size,overlapParams)
+			
+			if partInBox then
+				for _, part in ipairs(partInBox) do
+					if string.find(part.Name,"SolidDoor") then
+						destoryWall(doorNode,part)
+					end
+				end
+			end
+			
+				
+			num = num +1
+			
+			
+		end
+		
+	end
+	
+	randomRoom = hallwayTable[1].PrimaryPart.CFrame
+	randomRoom = CFrame.new(randomRoom.X, randomRoom.Y +5, randomRoom.Z)--]]
 end
+
+
 
 -- Run the main function
 main()
+
+
+--[[local player = game.Players:FindFirstChild("Silver619s")  -- Find the player by name
+
+if player and player.Character then
+	local character = player.Character
+	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+
+	if humanoidRootPart then
+		-- Set the new position (CFrame) for teleporting
+		
+		humanoidRootPart.CFrame = randomRoom  -- Teleport the player
+	end
+end--]]
+
+
+
+
+
+

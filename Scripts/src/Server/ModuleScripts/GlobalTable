@@ -1,0 +1,68 @@
+local GlobalTable = {}
+GlobalTable.__index = GlobalTable
+
+function GlobalTable.new()
+	return setmetatable({globalTable = {}, globalBlockTable = {} , graph = {} } , GlobalTable)
+end
+
+
+function GlobalTable:insertBlock(block)
+	table.insert(self.globalTable,block)
+	table.insert(self.globalBlockTable,block.Parent)
+end
+
+function GlobalTable:findNode(node)
+	
+ local index = table.find(self.globalTable,node) 
+ return self.globalTable[index]	
+end
+
+function GlobalTable:CreateGraph()
+	
+	for i, block in pairs(self.globalBlockTable) do
+		local hitbox = block:WaitForChild("HitBox")
+		local children =block:GetDescendants()
+
+		local overlapParams = OverlapParams.new() -- This overlapParams prevents the GetPartBoundsInBox from detecting itself
+		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+		overlapParams.FilterDescendantsInstances = children
+
+		local partsInBox = workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,overlapParams)
+
+		for _, part in ipairs(partsInBox) do
+
+			if string.find(part.Name,"DoorNode") then
+				if not self.graph[block.Name] then
+					self.graph[block.Name] = {}
+					self.graph[block.Name]["connections"] = {part.Parent}
+
+				elseif not table.find(self.graph[block.Name].connections, part.Parent) then
+					table.insert(self.graph[block.Name]["connections"],part.Parent)
+
+				end
+			end
+		end
+
+		if self.graph[block.Name] then
+			self.graph[block.Name]["touched"] = #self.graph[block.Name]["connections"]
+			self.graph[block.Name]["data"] = block
+		end
+		wait()
+	end
+end	
+
+
+function GlobalTable:GetGraph()
+	return self.graph
+end
+
+function GlobalTable:GetTable()
+	return self.globalTable
+end
+
+function GlobalTable:GetWholeBlockTabe()
+	return self.globalBlockTable
+end
+
+
+return GlobalTable

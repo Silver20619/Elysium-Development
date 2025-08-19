@@ -1,0 +1,23 @@
+local ConvertHallPQ = {}
+ConvertHallPQ.__index = ConvertHallPQ
+
+function ConvertHallPQ.new()
+	local self = {blocks = {}}
+	setmetatable(self,ConvertHallPQ)
+	return self
+end
+
+function ConvertHallPQ:push(block)
+	table.insert(self.blocks,1,block)
+	print(self.blocks)
+end
+
+function ConvertHallPQ:pop()
+	print(self.blocks)
+	local block = table.remove(self.blocks,1)
+	print(block)
+	return block
+end
+
+
+return ConvertHallPQ

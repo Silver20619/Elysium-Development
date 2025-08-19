@@ -1,0 +1,63 @@
+local PathPQ = {}
+
+
+PathPQ.__index = PathPQ
+local PFNods = require(script.Parent.Parent.PathFinding:FindFirstChild("PFNodes"))
+
+function PathPQ.new()
+	return setmetatable({ heap = {} }, PathPQ)
+end
+
+
+function PathPQ:insert(node)
+	table.insert(self.heap, node)
+	self:_heapifyUp(#self.heap)
+end
+
+
+
+
+function PathPQ:pop()
+	if #self.heap == 0 then return nil end
+	if #self.heap == 1 then return table.remove(self.heap, 1) end
+
+	local root = self.heap[1]
+	self.heap[1] = table.remove(self.heap)
+	self:_heapifyDown(1)
+
+	return root
+end
+
+
+function PathPQ:_heapifyUp(index)
+	while index > 1 do
+		local parent = math.floor(index / 2)
+		
+		if self.heap[parent]:GetFcost() <= self.heap[index]:GetFcost() then
+			break
+		end
+		self.heap[parent], self.heap[index] = self.heap[index], self.heap[parent]
+		index = parent
+	end
+end
+
+
+function PathPQ:_heapifyDown(index)
+	local left, right = 2 * index, 2 * index + 1
+	local smallest = index
+
+	if left <= #self.heap and self.heap[left]:GetFcost() < self.heap[smallest]:GetFcost() then
+		smallest = left
+	end
+	if right <= #self.heap and self.heap[right]:GetFcost() < self.heap[smallest]:GetFcost() then
+		smallest = right
+	end
+
+	if smallest ~= index then
+		self.heap[index], self.heap[smallest] = self.heap[smallest], self.heap[index]
+		self:_heapifyDown(smallest)
+	end
+end
+
+
+return PathPQ

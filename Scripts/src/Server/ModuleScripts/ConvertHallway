@@ -1,0 +1,244 @@
+local ConvertHallways = {}
+local ConvertHallPQ = require(script:WaitForChild("ConvertHallPQ"))
+local Graph
+local usedBlocks = {}
+local hallPQ = ConvertHallPQ.new()
+local hallTable
+local dist = 0
+
+
+local function getParents(doorNode)
+	return doorNode.Parent
+end
+
+local function getTouched(block)
+	return block.touched
+end
+
+local function getIndex(block)
+	
+return (hallTable[block.connections[1].Name])
+	and Graph[block.connections[2].Name]
+	or Graph[block.connections[1].Name]
+end
+
+local function setDistance(block)
+	local firstBlock = block.data.PrimaryPart.Position
+	local secBlock = block.connections[1].PrimaryPart.Position
+	
+	dist = (firstBlock - secBlock).Magnitude
+end
+
+local function checkTypeOfNeighbor (nBlock)
+	
+	if nBlock.touched >= 3 then
+		--print("This block is a tblock")
+		return "tBlock"
+	else
+		--print("this is a biBlock")
+		return "biBlock"
+	end
+end
+
+local function inGraph(block)
+	if type(block) == "table" then
+		local gBlock = Graph[block.data.Name]
+		return gBlock
+	elseif typeof(block) == "Instance" then
+		local gBlock = Graph[block.Name]
+		return gBlock
+	else
+		print("Block is not a table or a instance")
+		return nil
+	end
+	
+end
+
+local function changeColor(block)
+	local hitBox = block:WaitForChild("HitBox")
+	hitBox.Transparency = 0
+end
+
+
+local function checkShareNeighbor(Table,excluded)
+	
+	local chosenBlocks = {}
+	local chosenNeighbors = {}
+	local squareTable = {}
+	
+	local num = #Table - 1
+	local count = 0
+	
+	for i, neighbor in pairs (Table) do
+		
+		if count < num then
+			chosenBlocks[neighbor.Name] = Graph[neighbor.Name]
+			count = count + 1
+			
+			for n, ranblocks in pairs(Graph[neighbor.Name].connections) do
+				if ranblocks == excluded then
+				 continue
+				else
+					if chosenNeighbors[ranblocks.Name] then
+						print("we have found a square")
+						squareTable = {Graph[chosenNeighbors[ranblocks.Name]],
+							           Graph[ranblocks.Name],
+									   Graph[neighbor.Name],
+									   Graph[excluded.Name]	}
+									
+						print(squareTable)
+
+						for key, value in pairs (squareTable) do
+							hallTable[value.data.Name] = value
+							changeColor(value.data)
+						end
+						
+						return true
+					else
+						chosenNeighbors[ranblocks.Name] = neighbor.Name
+					end
+				end
+			end	
+		end
+	end
+	
+	if next(chosenBlocks) == nil then
+		print("all blocks are processed")
+		return false
+	end
+	
+	for n,neighbor in pairs(Table) do
+		if not chosenBlocks[neighbor.Name] then
+			local gNeighbor = Graph[neighbor.Name]
+			for x, square in pairs(gNeighbor.connections) do	
+				if square ~= excluded then
+					if chosenNeighbors[square.Name] then  
+						local cBlock = chosenBlocks[chosenNeighbors[square.Name]]
+						squareTable = {Graph[square.Name],
+									   Graph[gNeighbor.data.Name],
+									   Graph[cBlock.data.Name],
+									   Graph[excluded.Name]
+						              }
+						print(cBlock.data.Name .. " and " .. gNeighbor.data.Name .. " share the block: " .. square.Name)
+						print(squareTable)
+						
+						for key, value in pairs (squareTable) do
+							hallTable[value.data.Name] = value.data
+							changeColor(value.data)
+						end
+						
+						return true
+					else
+						print(square.Name .. " does not share a connection with a chosen block" )
+						--print(chosenNeighbors)
+						--print(square)
+					end
+				end	
+			end
+		end
+	end
+	
+	print("we could not find any squares")
+--	print(chosenBlocks)
+	--print(chosenNeighbors)
+	return false
+end
+
+local function possibleSquare(startblock)
+	local bool = checkShareNeighbor(startblock.connections,startblock.data)
+	return bool
+end
+
+
+
+local function createStraightHall(startBlock)
+	hallTable = {[startBlock.data.Name] = startBlock.data}
+	changeColor(startBlock.data)
+	
+	local nextBlock = Graph[startBlock.connections[1].Name]
+	local parent = startBlock
+	local countDict = 0
+	
+	
+	if startBlock.connections[2] then
+		print("we pushed the first")
+		hallPQ:push(Graph[startBlock.connections[2].Name])
+	end
+	
+
+	while countDict < 100 do
+		wait(1)
+		print(hallTable)
+		print(countDict)
+		
+		if checkTypeOfNeighbor(nextBlock) =="biBlock" then -- Checks if the nBlock is a biBlock
+			
+			hallTable[nextBlock.data.Name] = nextBlock.data
+			changeColor(nextBlock.data)
+			
+			countDict = countDict + 1
+			
+			--idx = (hallTable[nextBlock.connections[1].Name]) and Graph[nextBlock.connections[2].Name] or Graph[nextBlock.connections[1].Name]
+			local success, result = pcall(getIndex,nextBlock)
+			
+			if success then 
+				parent = nextBlock
+				nextBlock = result
+			else 
+				print(nextBlock)
+				print("Error:", result)
+				print("There are no more connection for this block : " .. nextBlock.data.Name)
+				nextBlock = hallPQ:pop()
+			end
+			
+		elseif checkTypeOfNeighbor(nextBlock) =="tBlock" then
+			print(nextBlock.data.Name .. " is a tBlock")
+			local square = possibleSquare(nextBlock)
+			
+			if not square then
+				local debounce = false
+				local temp = nextBlock.connections
+				hallTable[nextBlock.data.Name] = nextBlock.data
+				changeColor(nextBlock.data)
+				countDict = countDict + 1
+				
+				for i, neighbor in pairs (temp) do
+					if neighbor ~= parent.data then
+						if not debounce then
+							parent = nextBlock
+							nextBlock = Graph[neighbor.Name]
+							debounce = true
+						else
+							hallPQ:push(Graph[neighbor.Name])
+						end
+					end
+				end
+			else
+				
+				nextBlock = hallPQ:pop()
+			end
+		end
+	end
+	
+	print(hallTable)
+end
+
+function ConvertHallways:changeHallways(graph)
+	
+	Graph = graph
+	print(Graph)
+
+	local tempBlock = Graph["Block1"]
+	setDistance(tempBlock)
+	--while not deleteBlock[tempBlock] do
+
+		if getTouched(tempBlock) < 3 then -- if the temp block is a biBlock
+			createStraightHall(tempBlock) -- This is the function that creates a straight hall
+		else
+			print("Block1 is touching more than 3 blocks " .. tostring(getTouched(tempBlock)))
+			possibleSquare(tempBlock)
+		end
+	--end
+end
+
+return ConvertHallways
